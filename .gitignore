@@ -1,8 +1,6 @@
 /vendor/
 .env
-storage/logs
 storage/members.json
-storage/members.txt
 storage/users
 .DS_Store
 index.php
