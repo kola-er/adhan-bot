@@ -8,6 +8,7 @@ use Dotenv\Dotenv;
 
 class AdhanBot
 {
+  const LOG_FILE = "../storage/logs";
   const INIT = "Welcome! AdhanBot is up and running!";
   const IS_RUNNING = "AdhanBot has been up and running";
   const REMINDER_TEXT = "...حي على الصلاة...حي على الفلاح";
@@ -26,8 +27,7 @@ class AdhanBot
   private $todayFajrTime;
   private $apiEndpointUrl;
 
-  public function __construct()
-  {
+  public function __construct() {
     $this->loadDotEnv();
     $this->httpClient = new Client;
     $this->method = getenv("METHOD");
@@ -63,9 +63,6 @@ class AdhanBot
 
   private function saveListOfSlackTeamMembersToFile() {
     file_put_contents("../storage/members.json", $this->getListOfSlackTeamMembers());
-    // $file = fopen("../storage/members.json", "w");
-    // fwrite($file, $this->getListOfSlackTeamMembers());
-    // fclose($file);
   }
 
   private function getListOfSlackTeamMembers() {
@@ -103,16 +100,19 @@ class AdhanBot
     $dateTimezone = $this->getTimezone($this->timezone);
     $this->status = $this::IS_RUNNING;
     $startDate = new DateTime("now", $dateTimezone);
-    $file = fopen("../storage/logs", "a");
     echo $this::INIT;
 
     while (true) {
       $this->loadMembersFromFile();
       $response = $this->httpClient->request('GET', $this->apiAlAdhanUrl);
       $prayerTimes = json_decode($response->getBody())->data->timings;
+      $prayerTimes = array_filter(json_decode(json_encode($prayerTimes), true), function ($prayer) {
+        return (! ($prayer == "Sunrise" || $prayer == "Sunset"));
+      }, ARRAY_FILTER_USE_KEY);
+
       $log = "*****************************************************************\n";
       $log .= $this->status . " since " . $startDate->format('D, d M Y H:i:s') . "!";
-      fwrite($file, $log);
+      file_put_contents($this::LOG_FILE, $log, FILE_APPEND);
 
       foreach ($prayerTimes as $prayer => $time) {
         if ($prayer === "Fajr") {
@@ -123,8 +123,8 @@ class AdhanBot
         $next = DateTime::createFromFormat("H:i", $time, $dateTimezone);
         $timeDiff = $next->getTimestamp() - $now->getTimestamp();
 
-        if (! ($timeDiff <= 0 || $prayer == "Sunrise" || $prayer == "Sunset")) {
-          if (time_sleep_until($next->getTimestamp() + $this->getTimeOffset($prayer))) {
+        if ($timeDiff >= 0) {
+          if (time_sleep_until($now->getTimestamp() + 5 + $this->getTimeOffset($prayer))) {
             foreach ($this->members as $member) {
               $this->httpClient->request("POST", $this->webhookUrl, [
                 "form_params" => [
@@ -134,15 +134,13 @@ class AdhanBot
             }
           }
 
-          fwrite($file, "\nAdhan for $prayer was called on " . $next->format('D, d M Y H:i:s') . ".");
+          file_put_contents($this::LOG_FILE, "\nAdhan for $prayer was called on " . $next->format('D, d M Y H:i:s') . ".", FILE_APPEND);
         }
       }
 
-      fwrite($file, "\n\n");
+      file_put_contents($this::LOG_FILE, "\n\n", FILE_APPEND);
       $this->sleepTillNextDay($dateTimezone);
     }
-
-    fclose($file);
   }
 }
 ?>

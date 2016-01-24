@@ -2,5 +2,7 @@
 .env
 storage/members.json
 storage/users
+storage/logs
+storage/members.txt
 .DS_Store
 index.php
