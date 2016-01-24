@@ -124,7 +124,7 @@ class AdhanBot
         $timeDiff = $next->getTimestamp() - $now->getTimestamp();
 
         if ($timeDiff >= 0) {
-          if (time_sleep_until($now->getTimestamp() + 5 + $this->getTimeOffset($prayer))) {
+          if (time_sleep_until($next->getTimestamp() + $this->getTimeOffset($prayer))) {
             foreach ($this->members as $member) {
               $this->httpClient->request("POST", $this->webhookUrl, [
                 "form_params" => [
