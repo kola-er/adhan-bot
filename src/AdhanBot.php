@@ -123,7 +123,7 @@ class AdhanBot
         $next = DateTime::createFromFormat("H:i", $time, $dateTimezone);
         $timeDiff = $next->getTimestamp() - $now->getTimestamp();
 
-        if ($timeDiff >= 0) {
+        if ($timeDiff > 0) {
           if (time_sleep_until($next->getTimestamp() + $this->getTimeOffset($prayer))) {
             foreach ($this->members as $member) {
               $this->httpClient->request("POST", $this->webhookUrl, [
