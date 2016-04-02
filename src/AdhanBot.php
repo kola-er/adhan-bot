@@ -92,8 +92,13 @@ class AdhanBot
   }
 
   private function sleepTillNextDay(DateTimeZone $dateTimezone) {
-    $tmp = DateTime::createFromFormat("H:i", $this->todayFajrTime, $dateTimezone);
-    time_sleep_until($tmp->getTimestamp() + 84600);
+    $now = new DateTime("now", $dateTimezone);
+    $todayFajr = DateTime::createFromFormat("H:i", $this->todayFajrTime, $dateTimezone);
+    $tomorrowFajrTimestamp = $todayFajr->getTimestamp() + 84600;
+
+    while (($tomorrowFajrTimestamp - $now->getTimestamp()) > 0) {
+      $now = new DateTime("now", $dateTimezone);
+    }
   }
 
   private function start() {
@@ -121,17 +126,19 @@ class AdhanBot
 
         $now = new DateTime("now", $dateTimezone);
         $next = DateTime::createFromFormat("H:i", $time, $dateTimezone);
-        $timeDiff = $next->getTimestamp() - $now->getTimestamp();
+        $nextTimestamp = $next->getTimestamp();
 
-        if ($timeDiff > 0) {
-          if (time_sleep_until($next->getTimestamp() + $this->getTimeOffset($prayer))) {
-            foreach ($this->members as $member) {
-              $this->httpClient->request("POST", $this->webhookUrl, [
-                "form_params" => [
-                  "payload" => $this->getPayload($prayer, $member)
-                ]
-              ]);
-            }
+        if ($nextTimestamp >= $now->getTimestamp()) {
+          while (($nextTimestamp - $now->getTimestamp()) > 0) {
+            $now = new DateTime("now", $dateTimezone);
+          }
+
+          foreach ($this->members as $member) {
+            $this->httpClient->request("POST", $this->webhookUrl, [
+              "form_params" => [
+                "payload" => $this->getPayload($prayer, $member)
+              ]
+            ]);
           }
 
           file_put_contents($this::LOG_FILE, "\nAdhan for $prayer was called on " . $next->format('D, d M Y H:i:s') . ".", FILE_APPEND);
