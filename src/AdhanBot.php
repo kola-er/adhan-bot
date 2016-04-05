@@ -91,11 +91,6 @@ class AdhanBot
     ]);
   }
 
-  private function sleepTillNextDay(DateTimeZone $dateTimezone) {
-    $tmp = DateTime::createFromFormat("H:i", $this->todayFajrTime, $dateTimezone);
-    time_sleep_until($tmp->getTimestamp() + 84600);
-  }
-
   private function start() {
     $dateTimezone = $this->getTimezone($this->timezone);
     $this->status = $this::IS_RUNNING;
@@ -124,14 +119,14 @@ class AdhanBot
         $timeDiff = $next->getTimestamp() - $now->getTimestamp();
 
         if ($timeDiff > 0) {
-          if (time_sleep_until($next->getTimestamp() + $this->getTimeOffset($prayer))) {
-            foreach ($this->members as $member) {
-              $this->httpClient->request("POST", $this->webhookUrl, [
-                "form_params" => [
-                  "payload" => $this->getPayload($prayer, $member)
-                ]
-              ]);
-            }
+          sleep($timeDiff + $this->getTimeOffset($prayer));
+
+          foreach ($this->members as $member) {
+            $this->httpClient->request("POST", $this->webhookUrl, [
+              "form_params" => [
+                "payload" => $this->getPayload($prayer, $member)
+              ]
+            ]);
           }
 
           file_put_contents($this::LOG_FILE, "\nAdhan for $prayer was called on " . $next->format('D, d M Y H:i:s') . ".", FILE_APPEND);
@@ -139,7 +134,7 @@ class AdhanBot
       }
 
       file_put_contents($this::LOG_FILE, "\n\n", FILE_APPEND);
-      $this->sleepTillNextDay($dateTimezone);
+      sleep(32400);
     }
   }
 }
