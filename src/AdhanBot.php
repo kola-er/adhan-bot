@@ -8,7 +8,7 @@ use Dotenv\Dotenv;
 
 class AdhanBot
 {
-  const LOG_FILE = "../storage/logs";
+  const LOG_FILE = '/storage/logs';
   const INIT = "Welcome! AdhanBot is up and running!";
   const IS_RUNNING = "AdhanBot has been up and running";
   const REMINDER_TEXT = "...حي على الصلاة...حي على الفلاح";
@@ -42,7 +42,7 @@ class AdhanBot
 
   private function loadDotEnv() {
     if (getenv("APP_ENV") !== "production") {
-      $dotenv = new Dotenv(__DIR__ . "/..");
+      $dotenv = new Dotenv(dirname(__DIR__));
       $dotenv->load();
     }
   }
@@ -50,7 +50,7 @@ class AdhanBot
   private function loadMembersFromFile() {
     $this->members = [];
 
-    foreach (file("../storage/members.txt") as $line) {
+    foreach (file(dirname(__DIR__) . '/storage/members.txt') as $line) {
       array_push($this->members, $this->getMemberInfo(trim(substr($line, strpos($line, "=") + 1))));
     }
   }
@@ -62,7 +62,7 @@ class AdhanBot
   }
 
   private function saveListOfSlackTeamMembersToFile() {
-    file_put_contents("../storage/members.json", $this->getListOfSlackTeamMembers());
+    file_put_contents(dirname(__DIR__) . '/storage/members.json', $this->getListOfSlackTeamMembers());
   }
 
   private function getListOfSlackTeamMembers() {
@@ -107,7 +107,7 @@ class AdhanBot
 
       $log = "*****************************************************************\n";
       $log .= $this->status . " since " . $startDate->format('D, d M Y H:i:s') . "!";
-      file_put_contents($this::LOG_FILE, $log, FILE_APPEND);
+      file_put_contents(dirname(__DIR__) . $this::LOG_FILE, $log, FILE_APPEND);
 
       foreach ($prayerTimes as $prayer => $time) {
         if ($prayer === "Fajr") {
@@ -129,11 +129,11 @@ class AdhanBot
             ]);
           }
 
-          file_put_contents($this::LOG_FILE, "\nAdhan for $prayer was called on " . $next->format('D, d M Y H:i:s') . ".", FILE_APPEND);
+          file_put_contents(dirname(__DIR__) . $this::LOG_FILE, "\nAdhan for $prayer was called on " . $next->format('D, d M Y H:i:s') . ".", FILE_APPEND);
         }
       }
 
-      file_put_contents($this::LOG_FILE, "\n\n", FILE_APPEND);
+      file_put_contents(dirname(__DIR__) . $this::LOG_FILE, "\n\n", FILE_APPEND);
       sleep(32400);
     }
   }
