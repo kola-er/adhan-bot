@@ -24,7 +24,6 @@ class AdhanBot
   private $httpClient;
   private $webhookUrl;
   private $members = [];
-  private $todayFajrTime;
   private $apiEndpointUrl;
 
   public function __construct() {
@@ -110,10 +109,6 @@ class AdhanBot
       file_put_contents(dirname(__DIR__) . $this::LOG_FILE, $log, FILE_APPEND);
 
       foreach ($prayerTimes as $prayer => $time) {
-        if ($prayer === "Fajr") {
-          $this->todayFajrTime = $time;
-        }
-
         $now = new DateTime("now", $dateTimezone);
         $next = DateTime::createFromFormat("H:i", $time, $dateTimezone);
         $timeDiff = $next->getTimestamp() - $now->getTimestamp();
